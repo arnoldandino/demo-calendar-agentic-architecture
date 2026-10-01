@@ -1,0 +1,128 @@
+{
+  "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+  "contentVersion": "1.0.0.0",
+  "triggers": {
+    "manual": {
+      "type": "Request",
+      "kind": "Http",
+      "inputs": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "eventId": { "type": "string" },
+            "meetingSubject": { "type": "string" },
+            "requestedStart": { "type": "string" },
+            "requestedEnd": { "type": "string" },
+            "agentReason": { "type": "string" }
+          },
+          "required": ["eventId", "meetingSubject", "requestedStart", "requestedEnd"]
+        }
+      }
+    }
+  },
+  "actions": {
+    "Fetch_Dataverse_Rule_Independently": {
+      "runAfter": {},
+      "type": "OpenApiConnection",
+      "inputs": {
+        "host": {
+          "connectionName": "shared_commondataserviceforapps",
+          "operationId": "GetItem",
+          "apiId": "/providers/Microsoft.PowerApps/apis/shared_commondataserviceforapps"
+        },
+        "parameters": {
+          "entityName": "cr_calendar_governance_rules",
+          "recordId": "RULE-CAL-001"
+        }
+      }
+    },
+    "Fetch_Live_Event_From_Graph": {
+      "runAfter": {
+        "Fetch_Dataverse_Rule_Independently": ["Succeeded"]
+      },
+      "type": "Http",
+      "inputs": {
+        "method": "GET",
+        "uri": "https://graph.microsoft.com/v1.0/me/events/@{triggerBody()?['eventId']}",
+        "authentication": {
+          "type": "ActiveDirectoryOAuth",
+          "audience": "https://graph.microsoft.com"
+        }
+      }
+    },
+    "Condition_Check_Board_Meeting": {
+      "runAfter": {
+        "Fetch_Live_Event_From_Graph": ["Succeeded"]
+      },
+      "type": "If",
+      "expression": {
+        "or": [
+          {
+            "contains": [
+              "@toLower(body('Fetch_Live_Event_From_Graph')?['subject'])",
+              "board meeting"
+            ]
+          },
+          {
+            "contains": [
+              "@toLower(triggerBody()?['meetingSubject'])",
+              "board meeting"
+            ]
+          }
+        ]
+      },
+      "actions": {
+        "Return_Blocked_Response": {
+          "type": "Response",
+          "inputs": {
+            "statusCode": 200,
+            "body": {
+              "status": "Blocked",
+              "allowed": false,
+              "message": "Board meetings are protected and cannot be moved."
+            }
+          }
+        }
+      },
+      "else": {
+        "actions": {
+          "Execute_Graph_Calendar_PATCH": {
+            "type": "Http",
+            "inputs": {
+              "method": "PATCH",
+              "uri": "https://graph.microsoft.com/v1.0/me/events/@{triggerBody()?['eventId']}",
+              "body": {
+                "start": {
+                  "dateTime": "@{triggerBody()?['requestedStart']}",
+                  "timeZone": "UTC"
+                },
+                "end": {
+                  "dateTime": "@{triggerBody()?['requestedEnd']}",
+                  "timeZone": "UTC"
+                }
+              },
+              "authentication": {
+                "type": "ActiveDirectoryOAuth",
+                "audience": "https://graph.microsoft.com"
+              }
+            }
+          },
+          "Return_Success_Response": {
+            "runAfter": {
+              "Execute_Graph_Calendar_PATCH": ["Succeeded"]
+            },
+            "type": "Response",
+            "inputs": {
+              "statusCode": 200,
+              "body": {
+                "status": "Success",
+                "allowed": true,
+                "message": "Meeting successfully rescheduled."
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

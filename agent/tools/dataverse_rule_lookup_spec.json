@@ -1,0 +1,40 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Dataverse Governance Rules Retrieval Tool",
+    "version": "v1.0"
+  },
+  "paths": {
+    "/cr_calendar_governance_rules": {
+      "get": {
+        "operationId": "FetchDataverseRules",
+        "summary": "Fetch active calendar governance rules from Dataverse table",
+        "parameters": [
+          {
+            "name": "$filter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "cr_is_active eq true and cr_target_entity eq 'CalendarEvent'"
+            }
+          },
+          {
+            "name": "$select",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "cr_rule_id,cr_natural_language_rule,cr_enforcement_level"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Active business rules retrieved successfully"
+          }
+        }
+      }
+    }
+  }
+}

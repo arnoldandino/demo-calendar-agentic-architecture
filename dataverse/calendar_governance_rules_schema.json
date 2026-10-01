@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Dataverse Calendar Governance Rule Table Definition",
+  "tableName": "cr_calendar_governance_rule",
+  "displayName": "Calendar Governance Rule",
+  "primaryKey": "cr_rule_id",
+  "attributes": [
+    {
+      "logicalName": "cr_rule_id",
+      "displayName": "Rule ID",
+      "type": "SingleLine.Text",
+      "maxLength": 50,
+      "isRequired": true,
+      "description": "Unique identifier for governance rule (e.g., RULE-CAL-001)"
+    },
+    {
+      "logicalName": "cr_natural_language_rule",
+      "displayName": "Natural Language Rule",
+      "type": "MultipleLines.Text",
+      "maxLength": 4000,
+      "isRequired": true,
+      "description": "Plain English constraint read by Copilot agent and Gatekeeper flow"
+    },
+    {
+      "logicalName": "cr_target_entity",
+      "displayName": "Target Entity",
+      "type": "Choice",
+      "options": ["CalendarEvent", "Email", "Task"],
+      "defaultValue": "CalendarEvent",
+      "isRequired": true
+    },
+    {
+      "logicalName": "cr_enforcement_level",
+      "displayName": "Enforcement Level",
+      "type": "Choice",
+      "options": ["Strict_Block", "Warning", "AuditOnly"],
+      "defaultValue": "Strict_Block",
+      "isRequired": true
+    },
+    {
+      "logicalName": "cr_is_active",
+      "displayName": "Is Active",
+      "type": "Boolean",
+      "defaultValue": true,
+      "isRequired": true
+    }
+  ],
+  "seedRecords": [
+    {
+      "cr_rule_id": "RULE-CAL-001",
+      "cr_natural_language_rule": "Board meetings are critical and cannot be moved. Any meeting that has 'board meeting' in subject is considered board meeting.",
+      "cr_target_entity": "CalendarEvent",
+      "cr_enforcement_level": "Strict_Block",
+      "cr_is_active": true
+    },
+    {
+      "cr_rule_id": "RULE-CAL-002",
+      "cr_natural_language_rule": "Executive 1-on-1 sessions cannot be shifted outside of standard core working hours (08:00 to 17:00 EST).",
+      "cr_target_entity": "CalendarEvent",
+      "cr_enforcement_level": "Strict_Block",
+      "cr_is_active": true
+    }
+  ]
+}

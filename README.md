@@ -19,8 +19,7 @@ This POC decouples policy, intelligence, and execution:
 * **Bounded Intelligence (Copilot Studio Agent):** The agent receives read-only context to inspect schedules and evaluate rules, but is **intentionally denied direct calendar modification tools**.
 * **Deterministic Gatekeeper Flow (`ModifycalendarWithRuleCheck`):** When the agent proposes a modification, it must invoke a secondary, deterministic workflow. This flow independently queries the Dataverse rule engine, validates the target event against enterprise protection criteria, and executes the Graph API mutation only upon verification.
 
----
-How it works
+### How it works:
 Think of it as an executive assistant working with a policy handbook and a separate approver:
 
 | Component | Beginner-friendly role |
@@ -31,16 +30,6 @@ Think of it as an executive assistant working with a policy handbook and a separ
 | Microsoft Graph | Provides the interface for reading and updating calendar events. |
 | Gatekeeper flow | Independently checks the proposal before updating the calendar. |
 
-A typical request follows this path:
-
-flowchart LR
-    A[New Outlook event] --> B[Agent reads rules and calendar]
-    B --> C{Real overlap?}
-    C -->|No| D[Leave calendar unchanged]
-    C -->|Yes| E[Choose movable meeting and new time]
-    E --> F[Gatekeeper checks proposal]
-    F -->|Allowed| G[Update calendar]
-    F -->|Rejected| H[Leave event unchanged]
 
 For example, if a normal meeting overlaps a protected board meeting, the agent should preserve the board meeting and find another slot for the normal meeting within two business days. It preserves the meeting’s duration and treats back-to-back meetings as nonconflicting. When the newly created event is protected and conflicts, it also sends the configured assistant the verified outcome.
 
